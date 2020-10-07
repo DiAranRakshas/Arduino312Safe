@@ -22,9 +22,7 @@
 
 
 
-#define LCD_RST 6
-#define LCD_CS  7
-#define LCD_BL  8
+
 
 
 
