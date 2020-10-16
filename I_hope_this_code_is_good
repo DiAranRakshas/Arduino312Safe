@@ -1,0 +1,348 @@
+#include <LCDMenuLib2.h>
+#include <GyverTimer.h>
+
+GTimer Timer(MS, 1500);
+int i = 1;
+int z = 0;
+char customKey;
+char Key;
+int underLevel = 0;
+int sizelevel = 1;
+int k = 1;
+const String array2[4][3] = {
+    {
+       "string 1.1",
+        "string 1.2",
+        "string 1.3"
+    },
+    {
+         "string 1.1",
+         "string 1.2",
+         "string 1.3"
+     },
+     {
+         "string 2.1",
+         "string 2.2",
+         "string 2.3"
+     },
+     {
+         "string 3.1",
+         "string 3.2",
+         "string 3.3"
+     }
+};
+
+const String array3[3][3][3] = {
+  {
+      {
+          "string 1.1.1",
+          "string 1.1.2",
+          "string 1.1.3"
+      },
+      {
+          "string 1.2.1",
+          "string 1.2.2",
+          "string 1.2.3"
+      },
+      {
+          "string 1.3.1",
+          "string 1.3.2",
+          "string 1.3.3"
+      }
+  },
+  {
+      {
+          "string 2.1.1",
+          "string 2.1.2",
+          "string 2.1.3"
+      },
+      {
+          "string 2.2.1",
+          "string 2.2.2",
+          "string 2.2.3"
+      },
+      {
+          "string 2.3.1",
+          "string 2.3.2",
+          "string 2.3.3"
+      }
+  },
+  {
+      {
+          "string 3.1.1",
+          "string 3.1.2",
+          "string 3.1.3"
+      },
+      {
+          "string 3.2.1",
+          "string 3.2.2",
+          "string 3.2.3"
+      },
+      {
+          "string 3.3.1",
+          "string 3.3.2",
+          "string 3.3.3"
+      }
+  }
+};
+const int max = 4;
+const int array[4] = {
+    3,3,3,3
+};//массив, в котором обозначено количество элементов всех меню
+int max2;
+int size = 1;//номер подсвечиваемой в подменю
+
+int number = 1;//номер подсвечиваемой в главном меню
+#include <U8g2lib.h>
+#include <U8x8lib.h>
+#include <Key.h>
+#include <Keypad.h>
+#include <Arduino.h>
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_USE_PINS
+#include <Wire.h>
+#endif
+#define lcd_RST_pin 8 // LCD HX1230 pins, (no pin6) Change to your desire pins
+#define lcd_CS_pin 7
+#define lcd_DIN_pin 5
+#define lcd_CLK_pin 4
+U8G2_HX1230_96X68_F_2ND_4W_HW_SPI u8g2 = U8G2_HX1230_96X68_F_2ND_4W_HW_SPI(lcd_CS_pin, lcd_RST_pin, lcd_CLK_pin);  
+const byte ROWS = 4;
+const byte COLS = 4;
+char hexaKeys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+
+};
+byte rowPins[ROWS] = { 2,3,4,5 };//подключили первые четыре вывода к пинам Ардуино 2.3.4.5.
+byte colPins[COLS] = { 6,7,8,9 };//подключили последние четыре вывода к пинам Ардуино 6.7.8.9.
+Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
+void setup(void) {
+    u8g2.begin();
+    u8g2.enableUTF8Print();    // enable UTF8 support for the Arduino print()
+    u8g2.drawFrame(0, 5, 90, 57);
+    u8g2.drawLine(0, 5, 95, 5);
+    u8g2.drawLine(0, 57, 95, 57);
+    u8g2.setFont(u8g2_font_5x8_t_cyrillic);  //
+    u8g2.setFontDirection(0);
+}
+int e = 0;
+int el = 0;
+void coutMenu(int b, int Size)
+{//выводит главное меню и подменю
+    for (int g = 0; g < 5; g++)
+    {
+        u8g2.setCursor(2, 9 + g * 9);
+        if (Size - 1 == g)
+            scrolH(Size, b);
+        else
+            u8g2.print(array2[b][g]);
+    }
+
+}
+void scrolH(int y, int m)
+{//пролистывание строки
+    String q;
+    q = array2[m][y - 1];
+
+    for (int j = 0; j < sizeof(q); j++)
+    {
+        if (sizeof(q) - e > 15)
+        {
+            if (e != 0)
+            {
+                for (int w = 0; w < 15; w++)
+                    u8g2.print(q[w + e]);
+                e++;
+            }
+            else
+                e++;
+        }
+        else
+        {
+            u8g2.print(q);
+            e = 0;
+        }
+
+    }
+}
+void custom(char key)
+{
+
+    switch (key)
+    {
+    case 2:
+        if (i > 1) {
+            i--;
+            number--;
+        }
+        else
+            if (number > 1)
+                number--;
+        e = 1;
+        break;
+    case 8:
+        if (i < 3) {
+            i++;
+            number++;
+        }
+        else
+            if (number < max)
+                number++;
+        e = 1;
+
+        break;
+    case 6:
+        UnderLevel(number);
+        break;
+    case 4:
+        break;
+    };
+    if (key == 4)
+        coutMenu(0, number);
+}
+void UnderLevel(int o)
+{//loop для 2 меню
+    while (customKey != 4)
+    {
+
+        customKey == 'n';
+
+        while (customKey == 'n')
+        {
+            coutMenu(o, size);
+            Timer.reset();
+            while (customKey == 'n' || Timer.isReady() != 1)
+                char customKey = customKeypad.getKey();
+        }
+        if (customKey != 4)
+            customUnderLevel(customKey);
+        if (customKey == 4)
+            size = 1;
+    }
+}
+void customUnderLevel(char key)
+{//эта функция настройки 2-го меню
+    max2 = array[number];
+    switch (key)
+    {
+    case 2:
+        if (k > 1)
+        {
+            k--;
+            size--;
+        }
+        else
+            size--;
+        el = 1;
+        break;
+    case 8:
+        if (k < max2)
+        {
+            k++;
+            size++;
+        }
+        else
+            if (size < max2)
+                size++;
+        el = 1;
+
+        break;
+    case 6:
+        chose_foo();
+
+        break;
+    case 4:
+        break;
+    };
+}
+void chose_foo()
+{
+    switch (number)
+    {
+    case '1':
+        switch (size) {
+        case '1':
+            menu11();
+            break;
+        case '2':menu12();
+            break;
+        case '3':menu13();
+            break;
+        }
+        break;
+    case '2':
+        switch (size) {
+        case '1':menu21();
+            break;
+        case '2':menu22();
+            break;
+        case '3':menu23();
+            break;
+        }
+        break;
+    case '3':
+        switch (size) {
+        case '1':menu31();
+            break;
+        case '2':menu32();
+            break;
+        case '3':menu33();
+            break;
+        }
+        break;
+
+    }
+
+}
+void menu11()
+{
+
+}
+void menu12()
+{
+
+}
+void menu13()
+{
+
+}
+void menu21()
+{
+
+}
+void menu22()
+{
+
+}
+void menu23()
+{
+
+}
+void menu31()
+{
+
+}
+void menu32()
+{
+
+}
+void menu33()
+{
+
+}
+void loop() {
+    customKey = 'n';
+    u8g2.clear();
+    coutMenu(0, number);
+    u8g2.drawFrame(2, 8 + 9 * i - 9, 90, 17 + 9 * i);
+    Timer.reset();
+    while (customKey == 'n' || Timer.isReady() != 1)
+        char customKey = customKeypad.getKey();
+    if (customKey != 'n')
+        custom(customKey);
+}
